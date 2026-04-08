@@ -78,10 +78,10 @@
             const centerY = pacman.y * cellSize + cellSize/2;
             const radius = cellSize/2 - 1;
             
-            // Animate mouth opening/closing
-            const mouthAngle = Math.PI / 4; // Base mouth angle
-            const mouthOpen = Math.sin(Date.now() / 200) * 0.3; // Smooth mouth animation
-            const adjustedMouthAngle = mouthAngle * (1 + mouthOpen);
+            // Animate mouth opening/closing with classic proportions
+            const baseMouthAngle = Math.PI / 6; // Classic Pac-Man mouth angle
+            const mouthOpen = Math.sin(Date.now() / 200) * 0.7; // Amplitude for noticeable animation
+            const adjustedMouthAngle = baseMouthAngle * (1 + mouthOpen);
             
             // Determine start and end angles based on direction
             let startAngle, endAngle;
@@ -107,9 +107,9 @@
                     endAngle = adjustedMouthAngle;
             }
             
-            // Draw Pac-Man with mouth cutout
+            // Draw Pac-Man with mouth cutout using a more precise approach
             ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+            ctx.arc(centerX, centerY, radius, startAngle, endAngle, false);
             ctx.lineTo(centerX, centerY);
             ctx.closePath();
             ctx.fill();
