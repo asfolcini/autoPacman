@@ -9,6 +9,7 @@ An autonomous Pac-Man simulation with intelligent AI behavior.
   - Avoids ghosts when they're nearby (within 2 cells)
   - Prevents back-and-forth oscillation by avoiding immediate direction reversal
   - 10% chance of random movement to prevent deadlocks
+  - Animated mouth that opens and closes in sync with movement direction
 
 - **Smart Ghosts**:
   - Actively chase Pac-Man using pathfinding
@@ -42,6 +43,7 @@ An autonomous Pac-Man simulation with intelligent AI behavior.
 - Collision detection uses exact cell position matching
 - "Life Lost" message displayed with 3-second pause before reset
 - Cartoon-style ghost sprites with directional eyes
+- Animated Pac-Man sprite with opening/closing mouth
 
 ## Development
 

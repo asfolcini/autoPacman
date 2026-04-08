@@ -74,8 +74,44 @@
 
             // Pacman
             ctx.fillStyle = 'yellow';
+            const centerX = pacman.x * cellSize + cellSize/2;
+            const centerY = pacman.y * cellSize + cellSize/2;
+            const radius = cellSize/2 - 1;
+            
+            // Animate mouth opening/closing
+            const mouthAngle = Math.PI / 4; // Base mouth angle
+            const mouthOpen = Math.sin(Date.now() / 200) * 0.3; // Smooth mouth animation
+            const adjustedMouthAngle = mouthAngle * (1 + mouthOpen);
+            
+            // Determine start and end angles based on direction
+            let startAngle, endAngle;
+            switch(pacman.dir) {
+                case 'right':
+                    startAngle = -adjustedMouthAngle;
+                    endAngle = adjustedMouthAngle;
+                    break;
+                case 'left':
+                    startAngle = Math.PI - adjustedMouthAngle;
+                    endAngle = Math.PI + adjustedMouthAngle;
+                    break;
+                case 'up':
+                    startAngle = -Math.PI/2 - adjustedMouthAngle;
+                    endAngle = -Math.PI/2 + adjustedMouthAngle;
+                    break;
+                case 'down':
+                    startAngle = Math.PI/2 - adjustedMouthAngle;
+                    endAngle = Math.PI/2 + adjustedMouthAngle;
+                    break;
+                default:
+                    startAngle = -adjustedMouthAngle;
+                    endAngle = adjustedMouthAngle;
+            }
+            
+            // Draw Pac-Man with mouth cutout
             ctx.beginPath();
-            ctx.arc(pacman.x * cellSize + cellSize/2, pacman.y * cellSize + cellSize/2, cellSize/2 - 1, 0, Math.PI * 2);
+            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+            ctx.lineTo(centerX, centerY);
+            ctx.closePath();
             ctx.fill();
 
             // Fantasmi
