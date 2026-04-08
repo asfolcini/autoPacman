@@ -216,27 +216,52 @@
                 pacman.dir = validDirs[Math.floor(Math.random() * validDirs.length)];
             }
 
-            // Move Pac-Man
-            const dir = dirs[pacman.dir];
-            pacman.x += dir.x;
-            pacman.y += dir.y;
+            // Store intended position before moving
+            const nextPacmanX = pacman.x + dirs[pacman.dir].x;
+            const nextPacmanY = pacman.y + dirs[pacman.dir].y;
 
             // Eat dot
-            const idx = dots.findIndex(d => d.x === pacman.x && d.y === pacman.y);
+            const idx = dots.findIndex(d => d.x === nextPacmanX && d.y === nextPacmanY);
             if (idx !== -1) { dots.splice(idx,1); score++; }
 
-            // Collision with ghosts
+            // Collision with ghosts - check for any potential collision
             let collision = false;
+            
+            // Check if Pac-Man will move into a ghost's current position
             ghosts.forEach(ghost => {
-                const dx = pacman.x - ghost.x, dy = pacman.y - ghost.y;
-                if (pacman.x === ghost.x && pacman.y === ghost.y) {
+                if (nextPacmanX === ghost.x && nextPacmanY === ghost.y) {
                     collision = true;
                 }
             });
             
+            // Check if any ghost will move into Pac-Man's current position (crossing)
+            ghosts.forEach(ghost => {
+                // Calculate ghost's intended position (based on their current direction)
+                const ghostDir = dirs[ghost.dir];
+                const nextGhostX = ghost.x + ghostDir.x;
+                const nextGhostY = ghost.y + ghostDir.y;
+                
+                // Check for crossing: Pac-Man moves to ghost's position while ghost moves to Pac-Man's position
+                if (nextPacmanX === ghost.x && nextPacmanY === ghost.y && 
+                    nextGhostX === pacman.x && nextGhostY === pacman.y) {
+                    collision = true;
+                }
+            });
+            
+            // Move Pac-Man
+            pacman.x = nextPacmanX;
+            pacman.y = nextPacmanY;
+
             if (collision) {
                 lives--;
                 if (lives <= 0) {
+                    // Show game over message
+                    const gameOverElement = document.getElementById('gameOver');
+                    gameOverElement.textContent = 'GAME OVER';
+                    gameOverElement.style.color = 'red';
+                    gameOverElement.style.display = 'block';
+                    
+                    // Stop game and reload after 5 seconds
                     gameActive = false;
                     setTimeout(() => location.reload(), 5000);
                 } else {
@@ -278,6 +303,9 @@
                 const distB = Math.sqrt((pacman.x - b.x)**2 + (pacman.y - b.y)**2);
                 return distA - distB;
             });
+            
+            // Store intended ghost positions
+            const nextGhostPositions = [];
             
             ghosts.forEach(ghost => {
                 // Find all possible directions for ghost
@@ -335,11 +363,14 @@
                         }
                     });
                     
-                    // Move ghost in best direction
+                    // Store intended position
                     const dir = dirs[bestDir];
-                    ghost.x += dir.x;
-                    ghost.y += dir.y;
-                    ghost.dir = bestDir;
+                    nextGhostPositions.push({
+                        ghost: ghost,
+                        x: ghost.x + dir.x,
+                        y: ghost.y + dir.y,
+                        dir: bestDir
+                    });
                 } else {
                     // Take random valid direction (10% chance)
                     // Filter out directions that lead to occupied positions or are targeted by other ghosts
@@ -371,15 +402,56 @@
                     if (safeDirs.length > 0) {
                         const randomDir = safeDirs[Math.floor(Math.random() * safeDirs.length)];
                         const dir = dirs[randomDir];
-                        ghost.x += dir.x;
-                        ghost.y += dir.y;
-                        ghost.dir = randomDir;
+                        nextGhostPositions.push({
+                            ghost: ghost,
+                            x: ghost.x + dir.x,
+                            y: ghost.y + dir.y,
+                            dir: randomDir
+                        });
                     } else {
                         // If no safe moves, stay in place
-                        ghost.dir = ghost.dir; // Keep current direction
+                        nextGhostPositions.push({
+                            ghost: ghost,
+                            x: ghost.x,
+                            y: ghost.y,
+                            dir: ghost.dir
+                        });
                     }
                 }
             });
+            
+            // Now update all ghost positions at once to prevent crossing
+            nextGhostPositions.forEach(item => {
+                // Check for collisions with Pac-Man
+                // This handles both direct collision and crossing scenarios
+                if (item.x === pacman.x && item.y === pacman.y) {
+                    // Ghost moves to Pac-Man's current position
+                    item.ghost.x = item.x;
+                    item.ghost.y = item.y;
+                    item.ghost.dir = item.dir;
+                } else if (item.x === pacman.x && item.y === pacman.y) {
+                    // This is already covered above
+                    item.ghost.x = item.x;
+                    item.ghost.y = item.y;
+                    item.ghost.dir = item.dir;
+                } else {
+                    // Check for collisions with other ghosts
+                    let collisionWithOther = false;
+                    nextGhostPositions.forEach(otherItem => {
+                        if (item.ghost !== otherItem.ghost && item.x === otherItem.x && item.y === otherItem.y) {
+                            collisionWithOther = true;
+                        }
+                    });
+                    
+                    if (!collisionWithOther) {
+                        item.ghost.x = item.x;
+                        item.ghost.y = item.y;
+                        item.ghost.dir = item.dir;
+                    }
+                    // If collision with other ghost, keep original position
+                }
+            });
+            
             draw();
         }
 
