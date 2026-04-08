@@ -78,39 +78,37 @@
             const centerY = pacman.y * cellSize + cellSize/2;
             const radius = cellSize/2 - 1;
             
-            // Animate mouth opening/closing with classic proportions
-            const baseMouthAngle = Math.PI / 6; // Classic Pac-Man mouth angle
-            const mouthOpen = Math.sin(Date.now() / 200) * 0.7; // Amplitude for noticeable animation
-            const adjustedMouthAngle = baseMouthAngle * (1 + mouthOpen);
+            // Animate mouth opening/closing 
+            const mouthAngle = Math.PI / 6; // Base mouth angle
+            const mouthOpen = Math.sin(Date.now() / 200) * 0.7; // Smooth mouth animation
+            const adjustedMouthAngle = mouthAngle * (1 + mouthOpen);
             
-            // Determine start and end angles based on direction
-            let startAngle, endAngle;
-            switch(pacman.dir) {
-                case 'right':
-                    startAngle = -adjustedMouthAngle;
-                    endAngle = adjustedMouthAngle;
-                    break;
-                case 'left':
-                    startAngle = Math.PI - adjustedMouthAngle;
-                    endAngle = Math.PI + adjustedMouthAngle;
-                    break;
-                case 'up':
-                    startAngle = -Math.PI/2 - adjustedMouthAngle;
-                    endAngle = -Math.PI/2 + adjustedMouthAngle;
-                    break;
-                case 'down':
-                    startAngle = Math.PI/2 - adjustedMouthAngle;
-                    endAngle = Math.PI/2 + adjustedMouthAngle;
-                    break;
-                default:
-                    startAngle = -adjustedMouthAngle;
-                    endAngle = adjustedMouthAngle;
+            // Draw Pac-Man using a simpler and more reliable approach
+            ctx.beginPath();
+            
+            // Draw the main body with a mouth cutout
+            if (pacman.dir === 'right') {
+                // Right-facing: draw arc from -mouthAngle to mouthAngle, then connect to center
+                ctx.arc(centerX, centerY, radius, -adjustedMouthAngle, adjustedMouthAngle, false);
+                ctx.lineTo(centerX, centerY);
+            } else if (pacman.dir === 'left') {
+                // Left-facing: draw arc from PI-mouthAngle to PI+mouthAngle
+                ctx.arc(centerX, centerY, radius, Math.PI - adjustedMouthAngle, Math.PI + adjustedMouthAngle, false);
+                ctx.lineTo(centerX, centerY);
+            } else if (pacman.dir === 'up') {
+                // Up-facing: draw arc from -PI/2-mouthAngle to -PI/2+mouthAngle
+                ctx.arc(centerX, centerY, radius, -Math.PI/2 - adjustedMouthAngle, -Math.PI/2 + adjustedMouthAngle, false);
+                ctx.lineTo(centerX, centerY);
+            } else if (pacman.dir === 'down') {
+                // Down-facing: draw arc from PI/2-mouthAngle to PI/2+mouthAngle
+                ctx.arc(centerX, centerY, radius, Math.PI/2 - adjustedMouthAngle, Math.PI/2 + adjustedMouthAngle, false);
+                ctx.lineTo(centerX, centerY);
+            } else {
+                // Default case (right-facing)
+                ctx.arc(centerX, centerY, radius, -adjustedMouthAngle, adjustedMouthAngle, false);
+                ctx.lineTo(centerX, centerY);
             }
             
-            // Draw Pac-Man with mouth cutout using a more precise approach
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, startAngle, endAngle, false);
-            ctx.lineTo(centerX, centerY);
             ctx.closePath();
             ctx.fill();
 
