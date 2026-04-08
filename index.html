@@ -11,8 +11,8 @@
     </style>
 </head>
 <body>
-    <div id="hud">Score: <span id="score">0</span> | Lives: <span id="lives">3</span></div>
-    <div id="gameOver">GAME OVER</div>
+        <div id="hud">Score: <span id="score">0</span> | Lives: <span id="lives">3</span></div>
+        <div id="gameOver" style="display: none;"></div>
     <canvas id="game" width="300" height="300"></canvas>
     <script>
         const canvas = document.getElementById('game');
@@ -30,10 +30,10 @@
             [1,0,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,0,1,1],
             [1,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,0,1],
             [1,1,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,1,1,1],
-            [0,0,0,1,0,1,0,0,0,0,0,0,0,1,0,1,0,0,0,0],
+            [1,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,1,1],
             [1,1,1,1,0,1,0,1,1,0,1,1,0,1,0,1,1,1,1,1],
             [1,1,1,1,0,1,0,1,1,0,1,1,0,1,0,1,1,1,1,1],
-            [0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0],
             [1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1],
             [1,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,0,1],
             [1,0,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,0,1,1],
@@ -115,39 +115,140 @@
         function movePacman() {
             if (!gameActive) return;
             const dirs = { right: {x:1,y:0}, left:{x:-1,y:0}, up:{x:0,y:-1}, down:{x:0,y:1} };
-            const dir = dirs[pacman.dir];
-            const nx = pacman.x + dir.x, ny = pacman.y + dir.y;
             
-            // Se la mossa è valida, eseguila
-            if (nx >= 0 && nx < cols && ny >= 0 && ny < rows && maze[ny][nx] !== 1) {
-                pacman.x = nx;
-                pacman.y = ny;
-            } else {
-                // Se bloccato, scegli una nuova direzione casuale valida
-                const possibleDirs = ['right','left','up','down'].filter(d => {
+            // Find all possible directions
+            const possibleDirs = ['right','left','up','down'].filter(d => {
+                const dObj = dirs[d];
+                const nx = pacman.x + dObj.x, ny = pacman.y + dObj.y;
+                return nx >= 0 && nx < cols && ny >= 0 && ny < rows && maze[ny][nx] !== 1;
+            });
+            
+            if (possibleDirs.length === 0) return; // No valid moves
+            
+            // Calculate distances to nearest ghost
+            let minGhostDistance = Infinity;
+            ghosts.forEach(ghost => {
+                const dx = pacman.x - ghost.x, dy = pacman.y - ghost.y;
+                const distance = Math.sqrt(dx*dx + dy*dy);
+                minGhostDistance = Math.min(minGhostDistance, distance);
+            });
+            
+            // Prioritize paths with dots
+            const dirsWithDots = possibleDirs.filter(d => {
+                const dObj = dirs[d];
+                const nx = pacman.x + dObj.x, ny = pacman.y + dObj.y;
+                return dots.some(dot => dot.x === nx && dot.y === ny);
+            });
+            
+            // If ghosts are very close (within 2 cells), prioritize escaping even without dots
+            const shouldAvoidGhosts = minGhostDistance < 2;
+            
+            // 10% chance to take random direction to prevent deadlock
+            const takeRandom = Math.random() < 0.1;
+            
+            // Prevent back-and-forth oscillation: avoid reversing direction
+            const oppositeDir = { 'right': 'left', 'left': 'right', 'up': 'down', 'down': 'up' }[pacman.dir];
+            const avoidReverse = possibleDirs.filter(d => d !== oppositeDir);
+            
+            // If we have alternatives to reversing, use them; otherwise allow reversal if no other options
+            const validDirs = avoidReverse.length > 0 ? avoidReverse : possibleDirs;
+            
+            if (shouldAvoidGhosts) {
+                // Choose direction that maximizes distance from ghosts
+                let bestDir = validDirs[0];
+                let maxDistance = -Infinity;
+                
+                validDirs.forEach(d => {
                     const dObj = dirs[d];
-                    const nx2 = pacman.x + dObj.x, ny2 = pacman.y + dObj.y;
-                    return nx2 >= 0 && nx2 < cols && ny2 >= 0 && ny2 < rows && maze[ny2][nx2] !== 1;
+                    const nx = pacman.x + dObj.x, ny = pacman.y + dObj.y;
+                    let minDistToGhost = Infinity;
+                    ghosts.forEach(ghost => {
+                        const dx = nx - ghost.x, dy = ny - ghost.y;
+                        const distance = Math.sqrt(dx*dx + dy*dy);
+                        minDistToGhost = Math.min(minDistToGhost, distance);
+                    });
+                    
+                    if (minDistToGhost > maxDistance) {
+                        maxDistance = minDistToGhost;
+                        bestDir = d;
+                    }
                 });
-                if (possibleDirs.length > 0) {
-                    pacman.dir = possibleDirs[Math.floor(Math.random() * possibleDirs.length)];
-                }
-                // Se non ci sono direzioni valide, resta fermo (raro)
+                pacman.dir = bestDir;
+            } else if (dirsWithDots.length > 0 && !takeRandom) {
+                // Always prioritize paths with dots - choose randomly among them
+                const dotDirs = dirsWithDots.filter(d => d !== oppositeDir);
+                const useDirs = dotDirs.length > 0 ? dotDirs : dirsWithDots;
+                pacman.dir = useDirs[Math.floor(Math.random() * useDirs.length)];
+            } else if (!takeRandom) {
+                // No dots nearby, but ghosts are far - actively seek dots by choosing direction toward most dots
+                let bestDir = validDirs[0];
+                let maxDotPotential = -1;
+                
+                validDirs.forEach(d => {
+                    const dObj = dirs[d];
+                    const nx = pacman.x + dObj.x, ny = pacman.y + dObj.y;
+                    
+                    // Count dots in the next 2 steps in this direction
+                    let dotPotential = 0;
+                    let tempX = nx, tempY = ny;
+                    
+                    // Look ahead 2 steps in this direction
+                    for (let i = 0; i < 2; i++) {
+                        if (tempX < 0 || tempX >= cols || tempY < 0 || tempY >= rows || maze[tempY][tempX] === 1) break;
+                        
+                        if (dots.some(dot => dot.x === tempX && dot.y === tempY)) {
+                            dotPotential++;
+                        }
+                        
+                        // Continue in same direction
+                        tempX += dObj.x;
+                        tempY += dObj.y;
+                    }
+                    
+                    if (dotPotential > maxDotPotential) {
+                        maxDotPotential = dotPotential;
+                        bestDir = d;
+                    }
+                });
+                pacman.dir = bestDir;
+            } else {
+                // Take random direction (10% chance)
+                pacman.dir = validDirs[Math.floor(Math.random() * validDirs.length)];
             }
 
-            // Mangia punto
+            // Move Pac-Man
+            const dir = dirs[pacman.dir];
+            pacman.x += dir.x;
+            pacman.y += dir.y;
+
+            // Eat dot
             const idx = dots.findIndex(d => d.x === pacman.x && d.y === pacman.y);
             if (idx !== -1) { dots.splice(idx,1); score++; }
 
-            // Collisione con fantasmi
+            // Collision with ghosts
+            let collision = false;
             ghosts.forEach(ghost => {
                 const dx = pacman.x - ghost.x, dy = pacman.y - ghost.y;
-                if (Math.sqrt(dx*dx + dy*dy) < 0.8) {
-                    lives--;
-                    if (lives <= 0) {
-                        gameActive = false;
-                        setTimeout(() => location.reload(), 5000);
-                    } else {
+                if (pacman.x === ghost.x && pacman.y === ghost.y) {
+                    collision = true;
+                }
+            });
+            
+            if (collision) {
+                lives--;
+                if (lives <= 0) {
+                    gameActive = false;
+                    setTimeout(() => location.reload(), 5000);
+                } else {
+                    // Show life lost message
+                    const gameOverElement = document.getElementById('gameOver');
+                    gameOverElement.textContent = 'Life Lost';
+                    gameOverElement.style.color = 'red';
+                    gameOverElement.style.display = 'block';
+                    
+                    // Stop game for 3 seconds
+                    gameActive = false;
+                    setTimeout(() => {
                         pacman = {x:1, y:1, dir:'right'};
                         ghosts = [
                             {x:10, y:8, dir:'up', color:'red'},
@@ -155,24 +256,128 @@
                             {x:10, y:9, dir:'up', color:'cyan'},
                             {x:11, y:8, dir:'up', color:'orange'}
                         ];
-                    }
+                        gameActive = true;
+                        gameOverElement.style.display = 'none';
+                    }, 3000);
                 }
-            });
+            }
 
             draw();
         }
 
         function moveGhosts() {
             if (!gameActive) return;
-            const dirs = ['right','left','up','down'];
+            const dirs = { right: {x:1,y:0}, left:{x:-1,y:0}, up:{x:0,y:-1}, down:{x:0,y:1} };
+            
+            // Get current positions of all ghosts before moving
+            const currentGhostPositions = ghosts.map(g => ({x: g.x, y: g.y}));
+            
+            // Sort ghosts by distance to Pac-Man (closest first) to prioritize their movement
+            ghosts.sort((a, b) => {
+                const distA = Math.sqrt((pacman.x - a.x)**2 + (pacman.y - a.y)**2);
+                const distB = Math.sqrt((pacman.x - b.x)**2 + (pacman.y - b.y)**2);
+                return distA - distB;
+            });
+            
             ghosts.forEach(ghost => {
-                const dir = dirs[Math.floor(Math.random() * dirs.length)];
-                const d = { right: {x:1,y:0}, left:{x:-1,y:0}, up:{x:0,y:-1}, down:{x:0,y:1} }[dir];
-                const nx = ghost.x + d.x, ny = ghost.y + d.y;
-                if (nx >= 0 && nx < cols && ny >= 0 && ny < rows && maze[ny][nx] !== 1) {
-                    ghost.x = nx;
-                    ghost.y = ny;
-                    ghost.dir = dir;
+                // Find all possible directions for ghost
+                const possibleDirs = ['right','left','up','down'].filter(d => {
+                    const dObj = dirs[d];
+                    const nx = ghost.x + dObj.x, ny = ghost.y + dObj.y;
+                    return nx >= 0 && nx < cols && ny >= 0 && ny < rows && maze[ny][nx] !== 1;
+                });
+                
+                if (possibleDirs.length === 0) return; // No valid moves
+                
+                // Calculate direction toward Pac-Man
+                const dx = pacman.x - ghost.x;
+                const dy = pacman.y - ghost.y;
+                
+                // 10% chance to take random direction to prevent deadlock
+                const takeRandom = Math.random() < 0.1;
+                
+                if (!takeRandom) {
+                    // Prioritize directions that reduce distance to Pac-Man
+                    let bestDir = possibleDirs[0];
+                    let minDistance = Infinity;
+                    
+                    possibleDirs.forEach(d => {
+                        const dObj = dirs[d];
+                        const nx = ghost.x + dObj.x;
+                        const ny = ghost.y + dObj.y;
+                        
+                        // Calculate distance to Pac-Man after moving
+                        const newDx = pacman.x - nx;
+                        const newDy = pacman.y - ny;
+                        const distance = Math.sqrt(newDx*newDx + newDy*newDy);
+                        
+                        // Check if this position is occupied by another ghost (excluding self)
+                        const isOccupied = currentGhostPositions.some(g => g.x === nx && g.y === ny && 
+                            !(g.x === ghost.x && g.y === ghost.y));
+                        
+                        // Also check if this position is the target of another ghost's movement
+                        // We need to check if any other ghost is planning to move to this position
+                        let targetByOther = false;
+                        ghosts.forEach(otherGhost => {
+                            if (otherGhost !== ghost) {
+                                const otherDir = dirs[otherGhost.dir];
+                                const otherNx = otherGhost.x + otherDir.x;
+                                const otherNy = otherGhost.y + otherDir.y;
+                                if (otherNx === nx && otherNy === ny) {
+                                    targetByOther = true;
+                                }
+                            }
+                        });
+                        
+                        if (!isOccupied && !targetByOther && distance < minDistance) {
+                            minDistance = distance;
+                            bestDir = d;
+                        }
+                    });
+                    
+                    // Move ghost in best direction
+                    const dir = dirs[bestDir];
+                    ghost.x += dir.x;
+                    ghost.y += dir.y;
+                    ghost.dir = bestDir;
+                } else {
+                    // Take random valid direction (10% chance)
+                    // Filter out directions that lead to occupied positions or are targeted by other ghosts
+                    const safeDirs = possibleDirs.filter(d => {
+                        const dObj = dirs[d];
+                        const nx = ghost.x + dObj.x;
+                        const ny = ghost.y + dObj.y;
+                        
+                        // Check if position is occupied by another ghost
+                        const isOccupied = currentGhostPositions.some(g => g.x === nx && g.y === ny && 
+                            !(g.x === ghost.x && g.y === ghost.y));
+                        
+                        // Check if position is targeted by another ghost
+                        let targetByOther = false;
+                        ghosts.forEach(otherGhost => {
+                            if (otherGhost !== ghost) {
+                                const otherDir = dirs[otherGhost.dir];
+                                const otherNx = otherGhost.x + otherDir.x;
+                                const otherNy = otherGhost.y + otherDir.y;
+                                if (otherNx === nx && otherNy === ny) {
+                                    targetByOther = true;
+                                }
+                            }
+                        });
+                        
+                        return !isOccupied && !targetByOther;
+                    });
+                    
+                    if (safeDirs.length > 0) {
+                        const randomDir = safeDirs[Math.floor(Math.random() * safeDirs.length)];
+                        const dir = dirs[randomDir];
+                        ghost.x += dir.x;
+                        ghost.y += dir.y;
+                        ghost.dir = randomDir;
+                    } else {
+                        // If no safe moves, stay in place
+                        ghost.dir = ghost.dir; // Keep current direction
+                    }
                 }
             });
             draw();
