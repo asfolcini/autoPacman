@@ -37,7 +37,7 @@ An autonomous Pac-Man simulation with intelligent AI behavior.
 ## Technical Details
 
 - Grid-based movement (20×20 cells)
-- Each cell is 15×15 pixels
+- Each cell is 20×20 pixels
 - Pac-Man and ghosts move on a fixed grid
 - Game loop runs at 5 FPS for Pac-Man and 2.5 FPS for ghosts
 - No player input required - fully autonomous
