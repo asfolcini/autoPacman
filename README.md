@@ -15,6 +15,7 @@ An autonomous Pac-Man simulation with intelligent AI behavior.
   - Never occupy the same cell as another ghost
   - 10% chance of random movement to prevent deadlocks
   - Prioritize movement toward Pac-Man
+  - Cartoon-style ghost sprites instead of simple circles
 
 - **Game Mechanics**:
   - Collision detection: Pac-Man loses a life when touching a ghost
@@ -40,6 +41,7 @@ An autonomous Pac-Man simulation with intelligent AI behavior.
 - No player input required - fully autonomous
 - Collision detection uses exact cell position matching
 - "Life Lost" message displayed with 3-second pause before reset
+- Cartoon-style ghost sprites with directional eyes
 
 ## Development
 
