@@ -88,6 +88,88 @@
             ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
             ctx.fill();
             
+            // Draw eyes
+            ctx.fillStyle = 'white';
+            const eyeRadius = radius / 5;
+            const eyeOffsetX = radius / 3;
+            const eyeOffsetY = radius / 4;
+            
+            if (pacman.dir === 'right') {
+                // Eyes positioned for right-facing
+                ctx.beginPath();
+                ctx.arc(centerX - eyeOffsetX, centerY - eyeOffsetY, eyeRadius, 0, Math.PI * 2);
+                ctx.arc(centerX - eyeOffsetX, centerY + eyeOffsetY, eyeRadius, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (pacman.dir === 'left') {
+                // Eyes positioned for left-facing
+                ctx.beginPath();
+                ctx.arc(centerX + eyeOffsetX, centerY - eyeOffsetY, eyeRadius, 0, Math.PI * 2);
+                ctx.arc(centerX + eyeOffsetX, centerY + eyeOffsetY, eyeRadius, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (pacman.dir === 'up') {
+                // Eyes positioned for up-facing
+                ctx.beginPath();
+                ctx.arc(centerX - eyeOffsetX, centerY + eyeOffsetY, eyeRadius, 0, Math.PI * 2);
+                ctx.arc(centerX + eyeOffsetX, centerY + eyeOffsetY, eyeRadius, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (pacman.dir === 'down') {
+                // Eyes positioned for down-facing
+                ctx.beginPath();
+                ctx.arc(centerX - eyeOffsetX, centerY - eyeOffsetY, eyeRadius, 0, Math.PI * 2);
+                ctx.arc(centerX + eyeOffsetX, centerY - eyeOffsetY, eyeRadius, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                // Default case (right-facing)
+                ctx.beginPath();
+                ctx.arc(centerX - eyeOffsetX, centerY - eyeOffsetY, eyeRadius, 0, Math.PI * 2);
+                ctx.arc(centerX - eyeOffsetX, centerY + eyeOffsetY, eyeRadius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Draw pupils
+            ctx.fillStyle = 'black';
+            const pupilRadius = eyeRadius / 2;
+            let pupilOffsetX = 0;
+            let pupilOffsetY = 0;
+            
+            if (pacman.dir === 'right') {
+                pupilOffsetX = pupilRadius;
+            } else if (pacman.dir === 'left') {
+                pupilOffsetX = -pupilRadius;
+            } else if (pacman.dir === 'up') {
+                pupilOffsetY = -pupilRadius;
+            } else if (pacman.dir === 'down') {
+                pupilOffsetY = pupilRadius;
+            }
+            
+            if (pacman.dir === 'right') {
+                ctx.beginPath();
+                ctx.arc(centerX - eyeOffsetX + pupilOffsetX, centerY - eyeOffsetY + pupilOffsetY, pupilRadius, 0, Math.PI * 2);
+                ctx.arc(centerX - eyeOffsetX + pupilOffsetX, centerY + eyeOffsetY + pupilOffsetY, pupilRadius, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (pacman.dir === 'left') {
+                ctx.beginPath();
+                ctx.arc(centerX + eyeOffsetX + pupilOffsetX, centerY - eyeOffsetY + pupilOffsetY, pupilRadius, 0, Math.PI * 2);
+                ctx.arc(centerX + eyeOffsetX + pupilOffsetX, centerY + eyeOffsetY + pupilOffsetY, pupilRadius, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (pacman.dir === 'up') {
+                ctx.beginPath();
+                ctx.arc(centerX - eyeOffsetX + pupilOffsetX, centerY + eyeOffsetY + pupilOffsetY, pupilRadius, 0, Math.PI * 2);
+                ctx.arc(centerX + eyeOffsetX + pupilOffsetX, centerY + eyeOffsetY + pupilOffsetY, pupilRadius, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (pacman.dir === 'down') {
+                ctx.beginPath();
+                ctx.arc(centerX - eyeOffsetX + pupilOffsetX, centerY - eyeOffsetY + pupilOffsetY, pupilRadius, 0, Math.PI * 2);
+                ctx.arc(centerX + eyeOffsetX + pupilOffsetX, centerY - eyeOffsetY + pupilOffsetY, pupilRadius, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                // Default case (right-facing)
+                ctx.beginPath();
+                ctx.arc(centerX - eyeOffsetX + pupilOffsetX, centerY - eyeOffsetY + pupilOffsetY, pupilRadius, 0, Math.PI * 2);
+                ctx.arc(centerX - eyeOffsetX + pupilOffsetX, centerY + eyeOffsetY + pupilOffsetY, pupilRadius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
             // Draw mouth (black triangle)
             ctx.fillStyle = 'black';
             ctx.beginPath();
